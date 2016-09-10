@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+procname=$(basename -- "$0")
+
+docker-ip()
+{
+  docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
+}
+
+docker-name()
+{
+  docker inspect --format '{{.Name}}' $1 | cut -d'/' -f2-
+}
+
+docker-domain()
+{
+  docker inspect --format '{{.Config.Domainname}}' $1 | cut -d'/' -f2-
+}
+
+docker-env()
+{
+  envs=$(docker inspect --format '{{.Config.Env}}' $1 | cut -d\[ -f2 | cut -d\] -f1)
+
+  if [ ! -z "$2" ]; then
+    for env in $envs
+    do
+      if [ "$2" == $(echo $env | cut -d'=' -f1) ]; then
+        echo $env | cut -d'=' -f2
+      fi
+    done
+  else
+    echo $envs
+  fi
+}
+
+add_host()
+{
+  echo -e "$1\t$2 #$procname" | sudo tee --append /etc/hosts 1> /dev/null
+}
+
+grep -v '#'$procname /etc/hosts | sudo tee /etc/hosts 1> /dev/null
+
+for id in $(docker ps | grep -v 'CONTAINER' | awk '{print $1}')
+do
+  ip=$(docker-ip $id)
+
+  add_host $ip $id
+
+  name=$(docker-name $id)
+  if [ ! -z "$name" ]; then
+    add_host $ip $name
+  fi
+
+  domain=$(docker-domain $id)
+  if [ ! -z "$domain" ]; then
+    add_host $ip $domain
+  fi
+
+  vhost=$(docker-env $id VIRTUAL_HOST)
+  if [ ! -z "$vhost" ]; then
+    add_host $ip $vhost
+  fi
+done
