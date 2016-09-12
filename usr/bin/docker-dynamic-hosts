@@ -4,43 +4,43 @@ procname=$(basename -- "$0")
 
 docker-ip()
 {
-  docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
+  /usr/bin/docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
 }
 
 docker-name()
 {
-  docker inspect --format '{{.Name}}' $1 | cut -d'/' -f2-
+  /usr/bin/docker inspect --format '{{.Name}}' $1 | /usr/bin/cut -d'/' -f2-
 }
 
 docker-domain()
 {
-  docker inspect --format '{{.Config.Domainname}}' $1 | cut -d'/' -f2-
+  /usr/bin/docker inspect --format '{{.Config.Domainname}}' $1 | /usr/bin/cut -d'/' -f2-
 }
 
 docker-env()
 {
-  envs=$(docker inspect --format '{{.Config.Env}}' $1 | cut -d\[ -f2 | cut -d\] -f1)
+  envs=$(/usr/bin/docker inspect --format '{{.Config.Env}}' $1 | /usr/bin/cut -d\[ -f2 | /usr/bin/cut -d\] -f1)
 
   if [ ! -z "$2" ]; then
     for env in $envs
     do
-      if [ "$2" == $(echo $env | cut -d'=' -f1) ]; then
-        echo $env | cut -d'=' -f2
+      if [ "$2" == $(/bin/echo $env | /usr/bin/cut -d'=' -f1) ]; then
+        /bin/echo $env | /usr/bin/cut -d'=' -f2
       fi
     done
   else
-    echo $envs
+    /bin/echo $envs
   fi
 }
 
 add_host()
 {
-  echo -e "$1\t$2 #$procname" | sudo tee --append /etc/hosts 1> /dev/null
+  /bin/echo -e "$1\t$2 #$procname" | /usr/bin/sudo /usr/bin/tee --append /etc/hosts 1> /dev/null
 }
 
-grep -v '#'$procname /etc/hosts | sudo tee /etc/hosts 1> /dev/null
+/bin/grep -v '#'$procname /etc/hosts | /usr/bin/sudo /usr/bin/tee /etc/hosts 1> /dev/null
 
-for id in $(docker ps | grep -v 'CONTAINER' | awk '{print $1}')
+for id in $(/usr/bin/docker ps | /bin/grep -v 'CONTAINER' | /usr/bin/awk '{print $1}')
 do
   ip=$(docker-ip $id)
 
