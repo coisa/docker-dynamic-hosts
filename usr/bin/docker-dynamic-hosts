@@ -12,6 +12,11 @@ docker-name()
   /usr/bin/docker inspect --format '{{.Name}}' $1 | /usr/bin/cut -d'/' -f2-
 }
 
+docker-hostname()
+{
+  /usr/bin/docker inspect --format '{{.Config.Hostname}}' $1
+}
+
 docker-domain()
 {
   /usr/bin/docker inspect --format '{{.Config.Domainname}}' $1 | /usr/bin/cut -d'/' -f2-
@@ -49,6 +54,13 @@ do
   name=$(docker-name $id)
   if [ ! -z "$name" ]; then
     add_host $ip $name
+  fi
+
+  host=$(docker-hostname $id)
+  if [ ! -z "$host" ]; then
+    if [ "$host" != "$id" ]; then
+      add_host $ip $host
+    fi
   fi
 
   domain=$(docker-domain $id)
